@@ -2,10 +2,10 @@ cmake_minimum_required(VERSION 3.5.1)
 project(cpp-tbb-sandbox)
 
 # option
-set(CMAKE_CXX_COMPILER g++)
+set(CMAKE_C_COMPILER gcc-7)
+set(CMAKE_CXX_COMPILER g++-7)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -v -g")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fgnu-tm")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1z -fgnu-tm")
 
 
 # pthread
