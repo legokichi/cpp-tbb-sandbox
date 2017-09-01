@@ -1,21 +1,22 @@
+#include "tbb/tbb.h"
 #include "tbb/blocked_range.h"
-#include "tbb/parallel_for.h"
-#include "tbb/task_scheduler_init.h"
 #include <iostream>
-#include <chrono>
-#include <thread>
-#include <numeric>
-#include <algorithm>
-#include <iterator>
-#include <functional>
-#include <vector>
-#include <list>
-#include <tuple>
-#include <optional>
-#include <variant>
 
 auto main(int argc, char* argv[])-> int {
     using namespace std;
+    using namespace tbb;
+    task_scheduler_init init;
+    parallel_for(
+        blocked_range<size_t>(0, 100),
+        [=](const blocked_range<size_t>& r) { for(size_t i=r.begin(); i!=r.end(); ++i) {
+            cout << i << endl;
+        } }
+    );
     cout << "ok" << endl;
     return 0;
 }
+
+#include <chrono>
+#include <thread>
+#include <optional>
+#include <variant>
