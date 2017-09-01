@@ -1,3 +1,6 @@
 [submodule "FindTBB"]
 	path = FindTBB
 	url = https://github.com/justusc/FindTBB.git
+[submodule "ffmpeg-example"]
+	path = ffmpeg-example
+	url = https://github.com/illuusio/ffmpeg-example.git

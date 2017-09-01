@@ -7,22 +7,28 @@ set(CMAKE_CXX_COMPILER g++-7)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -v -g")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1z -fgnu-tm")
 
+# append modules
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/CMakeModules/")
+
 
 # pthread
-#set(THREADS_PREFER_PTHREAD_FLAG ON)
-#find_package(Threads REQUIRED)
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
 
 
 # TBB
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/FindTBB/")
 find_package(TBB COMPONENTS tbb tbbmalloc tbbmalloc_proxy)
 
 
 # boost
-#set(Boost_USE_STATIC_LIBS ON)
-#set(Boost_USE_MULTITHREADED ON)
-#set(Boost_USE_STATIC_RUNTIME OFF)
-#find_package(Boost 1.58.0 COMPONENTS program_options regex thread filesystem)
+set(Boost_USE_STATIC_LIBS ON)
+set(Boost_USE_MULTITHREADED ON)
+set(Boost_USE_STATIC_RUNTIME OFF)
+find_package(Boost 1.58.0 COMPONENTS program_options regex thread filesystem)
+
+
+# FFMpeg
+find_package(FFmpeg REQUIRED)
 
 
 # OpenCV
@@ -32,36 +38,23 @@ find_package(TBB COMPONENTS tbb tbbmalloc tbbmalloc_proxy)
 # build
 file(GLOB_RECURSE SOURCE_FILES "./src/*.cpp")
 include_directories(
-    ${TBB_INCLUDE_DIR}
-#    ${OPENCV_INCLUDE_DIRS}
-#    ${Boost_INCLUDE_DIRS}
-#    ${OpenCV_INCLUDE_DIRS}
 #    ${PROJECT_SOURCE_DIR}
-)
-link_directories(
-#    ${OPENCV_LIBRARY_DIRS}
-#    ${BOOST_LIBRARY_PATH}
+#    ${OPENCV_INCLUDE_DIRS}
+    ${FFMPEG_INCLUDE_DIR}
+    ${TBB_INCLUDE_DIR}
+    ${Boost_INCLUDE_DIRS}
 )
 add_executable(
     main
     ${SOURCE_FILES}
 )
-target_include_directories(
-    main PRIVATE
-    ${TBB_INCLUDE_DIRS}
-)
-target_compile_definitions(
-    main PRIVATE
-    ${TBB_DEFINITIONS}
-)
 target_link_libraries(
     main
-    ${TBB_LIBRARIES}
 #    ${OpenCV_LIBS}
-#    boost_coroutine
-#    ${Boost_LIBRARIES}
-#    Threads::Threads
-    pthread
+    ${FFMPEG_LIBRARIES}
+    ${TBB_LIBRARIES}
+    ${Boost_LIBRARIES}
+    ${CMAKE_THREAD_LIBS_INIT}
 )
 
 #add_subdirectory(foo)
