@@ -9,6 +9,7 @@
                 "/usr/local/include",
                 "/usr/include",
                 "/usr/include/x86_64-linux-gnu",
+                "${workspaceRoot}/third_party/webrtc-checkout/src",
                 "${workspaceRoot}/local/include",
                 "${workspaceRoot}"
             ],
@@ -22,6 +23,7 @@
                     "/usr/local/include",
                     "/usr/include",
                     "/usr/include/x86_64-linux-gnu",
+                    "${workspaceRoot}/third_party/webrtc-checkout/src",
                     "${workspaceRoot}/local/include",
                     "${workspaceRoot}"
                 ],

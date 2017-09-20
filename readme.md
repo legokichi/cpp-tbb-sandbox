@@ -25,7 +25,7 @@ git submodule update --init --recursive --depth 1
 ### ffmpeg
 
 ```sh
-cd thrid_party
+cd third_party
 git clone --recursive --depth 1 https://github.com/FFmpeg/FFmpeg.git
 cd FFmpeg
 sudo apt-get -y install autoconf automake build-essential libass-dev libfreetype6-dev \
@@ -75,7 +75,7 @@ hash -r
 ### opencv
 
 ```sh
-cd thrid_party
+cd third_party
 git clone --recursive --depth 1 https://github.com/opencv/opencv.git
 cd opencv
 sudo apt-get install build-essential
@@ -100,58 +100,67 @@ make -j4
 make install
 ```
 
-### boost
+### boost beast
+* http://www.boost.org/doc/libs/develop/libs/beast/doc/html/beast/quick_start.html
 
 ```sh
-cd thrid_party
+cd third_party
 git clone --recursive --depth 1 https://github.com/boostorg/boost.git
 cd boost
 ./bootstrap.sh
+./b2 headers
 ./b2 install -j4 --prefix=../../local
-```
-
-### janus
-
-```sh
-cd thrid_party
-git clone https://github.com/meetecho/janus-gateway.git
-cd janus-gateway
-sudo apt install libmicrohttpd-dev libjansson-dev libnice-dev \
-	libssl-dev libsrtp-dev libsofia-sip-ua-dev libglib2.0-dev \
-	libopus-dev libogg-dev libcurl4-openssl-dev pkg-config gengetopt \
-	libtool automake
-apt install libwebsockets
-(
-  wget https://github.com/cisco/libsrtp/archive/v1.5.4.tar.gz;
-  tar xfv v1.5.4.tar.gz;
-  cd libsrtp-1.5.4;
-  ./configure --prefix=/usr --enable-openssl;
-  make -j4 shared_library;
-  sudo make install;
-)
-sh autogen.sh
-./configure \
-  --prefix=/opt/janus \
-  --disable-websockets \
-  --disable-data-channels \
-  --disable-rabbitmq \
-  --disable-mqtt
-make -j4
-sudo make install
-sudo make configs
 ```
 
 ### libwebrtc
 * https://qiita.com/alivelime/items/f1447570eb96eb101cf4
 
 ```sh
-cd thrid_party
+cd third_party
 mkdir webrtc-checkout
 cd webrtc-checkout
 fetch --nohooks webrtc
 gclient sync
-gn gen out/Default --args='rtc_use_h264=true use_openh264=true'
-ninja -C out/Default
+cd src
+gn gen out/Release --args='rtc_use_h264=true rtc_use_lto=true'
+ninja -C out/Release
+cd ..
+mkdir -p ../../local/include/webrtc
+cp -rf src/api ../../local/include/webrtc/
+cp -rf src/base ../../local/include/webrtc/
+cp -rf src/p2p ../../local/include/webrtc/
+cp -rf src/pc ../../local/include/webrtc/
+cp -rf src/rtc_base ../../local/include/webrtc/
+cp -rf src/video ../../local/include/webrtc/
+cp -rf src/audio ../../local/include/webrtc/
+cp -rf src/media ../../local/include/webrtc/
+cp -rf src/ortc ../../local/include/webrtc/
+```
+
+### json
+* http://pickles-ochazuke.hatenablog.com/entry/2017/08/02/172805
+
+```sh
+cd third_party
+git clone --depth 1 --recursive https://github.com/nlohmann/json.git 
+cd json
+mkdir -p ../../local/include/json
+cp src/json.hpp ../../local/include/json/
+```
+
+### crow
+
+```sh
+sudo apt install libboost-all-dev
+git clone --depth 1 --recursive https://github.com/ipkn/crow.git
+cd crow
+mkdir build
+cd build
+cmake ..
+make -j4
+cd ..
+mkdir -p ../../local/include/crow
+cp amalgamate/crow_all.h ../../local/include/crow/crow.h
 ```
 
 

@@ -5,6 +5,12 @@
 #include <cstdlib>
 #include <iostream>
 #include <string>
+#include <crow/crow.h>
+crow::SimpleApp app;
+#include <json/json.hpp>
+using json = nlohmann::json;
+#include <webrtc/api/peerconnectioninterface.h>
+rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection;
 
 using tcp = boost::asio::ip::tcp;               // from <boost/asio/ip/tcp.hpp>
 namespace websocket = boost::beast::websocket;  // from <boost/beast/websocket.hpp>
