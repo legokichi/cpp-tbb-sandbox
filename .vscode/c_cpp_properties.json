@@ -9,6 +9,7 @@
                 "/usr/local/include",
                 "/usr/include",
                 "/usr/include/x86_64-linux-gnu",
+                "${workspaceRoot}/local/include",
                 "${workspaceRoot}"
             ],
             "defines": [],
@@ -21,6 +22,7 @@
                     "/usr/local/include",
                     "/usr/include",
                     "/usr/include/x86_64-linux-gnu",
+                    "${workspaceRoot}/local/include",
                     "${workspaceRoot}"
                 ],
                 "limitSymbolsToIncludedHeaders": true,
@@ -28,5 +30,5 @@
             }
         }
     ],
-    "version": 2
+    "version": 3
 }

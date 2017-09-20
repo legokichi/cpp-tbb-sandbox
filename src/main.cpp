@@ -1,51 +1,69 @@
+#include <boost/beast/core.hpp>
+#include <boost/beast/websocket.hpp>
+#include <boost/asio/connect.hpp>
+#include <boost/asio/ip/tcp.hpp>
+#include <cstdlib>
 #include <iostream>
-extern "C" {
-    #include <libavdevice/avdevice.h>
-    #include <libavcodec/avcodec.h>
-    #include <libavfilter/avfilter.h>
-    #include <libavformat/avformat.h>
-    #include <libswscale/swscale.h>
-};
-// https://github.com/abdullahfarwees/screen-recorder-ffmpeg-cpp/blob/master/ScreenRecorder.cpp
-auto main(int argc, char* argv[])-> int {
-    using std::cout;
-    using std::endl;
-    av_register_all();
-	avcodec_register_all();
-    avdevice_register_all();
-    auto pAVFormatContext = avformat_alloc_context();
-    auto pAVInputFormat = av_find_input_format("x11grab");
-    AVDictionary *options { nullptr };
-    cout << avformat_open_input(&pAVFormatContext, ":0.0+10,250", pAVInputFormat, nullptr) << endl;
-    cout << av_dict_set(&options,"framerate","30", 0) << endl;
-    cout << av_dict_set(&options, "preset", "medium", 0) << endl;
-    cout << avformat_find_stream_info(pAVFormatContext,NULL) << endl;
-    int VideoStreamIndx = -1;
-    for(int i = 0; i < pAVFormatContext->nb_streams; i++){ // find video stream posistion/index.
-	  if(pAVFormatContext->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO){
-	     VideoStreamIndx = i;
-	     break;
-	  }
+#include <string>
+
+using tcp = boost::asio::ip::tcp;               // from <boost/asio/ip/tcp.hpp>
+namespace websocket = boost::beast::websocket;  // from <boost/beast/websocket.hpp>
+
+// Sends a WebSocket message and prints the response
+int main(int argc, char** argv)
+{
+    try
+    {
+        // Check command line arguments.
+        if(argc != 4)
+        {
+            std::cerr <<
+                "Usage: websocket-client-sync <host> <port> <text>\n" <<
+                "Example:\n" <<
+                "    websocket-client-sync echo.websocket.org 80 \"Hello, world!\"\n";
+            return EXIT_FAILURE;
+        }
+        auto const host = argv[1];
+        auto const port = argv[2];
+        auto const text = argv[3];
+
+        // The io_service is required for all I/O
+        boost::asio::io_service ios;
+
+        // These objects perform our I/O
+        tcp::resolver resolver{ios};
+        websocket::stream<tcp::socket> ws{ios};
+
+        // Look up the domain name
+        auto const lookup = resolver.resolve({host, port});
+
+        // Make the connection on the IP address we get from a lookup
+        boost::asio::connect(ws.next_layer(), lookup);
+
+        // Perform the websocket handshake
+        ws.handshake(host, "/");
+
+        // Send the message
+        ws.write(boost::asio::buffer(std::string(text)));
+
+        // This buffer will hold the incoming message
+        boost::beast::multi_buffer buffer;
+
+        // Read a message into our buffer
+        ws.read(buffer);
+
+        // Close the WebSocket connection
+        ws.close(websocket::close_code::normal);
+
+        // If we get here then the connection is closed gracefully
+
+        // The buffers() function helps print a ConstBufferSequence
+        std::cout << boost::beast::buffers(buffer.data()) << std::endl;
     }
-    cout << VideoStreamIndx << endl;
-    auto pAVCodecContext = pAVFormatContext->streams[VideoStreamIndx]->codec;
-    auto pAVCodec = avcodec_find_decoder(pAVCodecContext->codec_id);
-    cout << avcodec_open2(pAVCodecContext , pAVCodec , NULL) << endl;
-
-    auto pAVPacket = (AVPacket*)av_malloc(sizeof(AVPacket));
-    av_init_packet(pAVPacket);
-    auto pAVFrame = av_frame_alloc();
-    auto outFrame = av_frame_alloc();
-    AVCodecContext *outAVCodecContext { nullptr };
-	
-    
-	if( video_outbuf == NULL )
-	{
-	cout<<"\n\nError : av_malloc()";
-	}
-
-    cout << "ok" << endl;
-    avformat_close_input(&pAVFormatContext);
-    avformat_free_context(pAVFormatContext);
+    catch(std::exception const& e)
+    {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return EXIT_FAILURE;
+    }
     return EXIT_SUCCESS;
 }

@@ -21,6 +21,8 @@ find_package(TBB COMPONENTS tbb tbbmalloc tbbmalloc_proxy)
 
 
 # boost
+set(Boost_INCLUDE_DIR ./local/include)
+set(Boost_LIBRARY_DIR ./local/lib)
 set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
@@ -32,14 +34,14 @@ find_package(FFmpeg REQUIRED)
 
 
 # OpenCV
-#find_package(OpenCV REQUIRED)
+find_package(OpenCV REQUIRED)
 
 
 # build
 file(GLOB_RECURSE SOURCE_FILES "./src/*.cpp")
 include_directories(
 #    ${PROJECT_SOURCE_DIR}
-#    ${OPENCV_INCLUDE_DIRS}
+    ${OPENCV_INCLUDE_DIRS}
     ${FFMPEG_INCLUDE_DIR}
     ${TBB_INCLUDE_DIR}
     ${Boost_INCLUDE_DIRS}
@@ -50,7 +52,7 @@ add_executable(
 )
 target_link_libraries(
     main
-#    ${OpenCV_LIBS}
+    ${OpenCV_LIBS}
     ${FFMPEG_LIBRARIES}
     ${TBB_LIBRARIES}
     ${Boost_LIBRARIES}
