@@ -122,19 +122,10 @@ cd webrtc-checkout
 fetch --nohooks webrtc
 gclient sync
 cd src
+git checkout -b libsourcey refs/remotes/branch-heads/59
+gclient sync
 gn gen out/Release --args='rtc_use_h264=true rtc_use_lto=true'
 ninja -C out/Release
-cd ..
-mkdir -p ../../local/include/webrtc
-cp -rf src/api ../../local/include/webrtc/
-cp -rf src/base ../../local/include/webrtc/
-cp -rf src/p2p ../../local/include/webrtc/
-cp -rf src/pc ../../local/include/webrtc/
-cp -rf src/rtc_base ../../local/include/webrtc/
-cp -rf src/video ../../local/include/webrtc/
-cp -rf src/audio ../../local/include/webrtc/
-cp -rf src/media ../../local/include/webrtc/
-cp -rf src/ortc ../../local/include/webrtc/
 ```
 
 ### json
@@ -163,17 +154,48 @@ mkdir -p ../../local/include/crow
 cp amalgamate/crow_all.h ../../local/include/crow/crow.h
 ```
 
+## lib
+first, build libwebrtc on branch-heads/59
 
-## libfoo.so を作る
-gcc -c foo.cpp
-gcc -shared -o libfoo.so foo.o 
-
-## libfoo.so を動的リンク
-gcc -c main.cpp
-gcc -o main main.o /path/to/libfoo.so # パスでリンク
-gcc -o main main.o -lfoo # $LIBRARY_PATH でリンク
-
-## libfoo.so を静的リンク
-gcc -c main.cpp
-gcc -o main main.o /path/to/libfoo.so # パスでリンク
-gcc -static -o main main.o -lfoo # -l を -static でリンク
+```sh
+sudo apt-get update
+sudo apt-get install -y build-essential pkg-config git cmake openssl libssl-dev
+sudo apt-get install --yes libavcodec-ffmpeg-dev libavdevice-ffmpeg-dev libavfilter-ffmpeg-dev libavformat-ffmpeg-dev libswresample-ffmpeg-dev libpostproc-ffmpeg-dev
+git clone --recursive --depth 1 https://github.com/sourcey/libsourcey.git
+cd libsourcey
+mkdir build
+cd build
+cmake \
+  -DCMAKE_INSTALL_PREFIX="/home/legokichi/Github/cpp_tbb/local/" \
+  -DWEBRTC_ROOT_DIR="/home/legokichi/Github/cpp_tbb/third_party/webrtc-checkout/src/" \
+  -DWEBRTC_INCLUDE_DIR="/home/legokichi/Github/cpp_tbb/third_party/webrtc-checkout/src/" \
+  -DCMAKE_BUILD_TYPE=RELEASE \
+  -DBUILD_SHARED_LIBS=OFF \
+  -DBUILD_MODULES=OFF \
+  -DBUILD_APPLICATIONS=OFF \
+  -DBUILD_SAMPLES=OFF \
+  -DBUILD_TESTS=OFF \
+  -DBUILD_MODULE_archo=ON \
+  -DBUILD_MODULE_base=ON \
+  -DBUILD_MODULE_crypto=ON \
+  -DBUILD_MODULE_http=ON \
+  -DBUILD_MODULE_json=ON \
+  -DBUILD_MODULE_av=ON \
+  -DBUILD_MODULE_net=ON \
+  -DBUILD_MODULE_pacm=ON \
+  -DBUILD_MODULE_pluga=ON \
+  -DBUILD_MODULE_sked=ON \
+  -DBUILD_MODULE_socketio=ON \
+  -DBUILD_MODULE_stun=ON \
+  -DBUILD_MODULE_symple=ON \
+  -DBUILD_MODULE_turn=ON \
+  -DBUILD_MODULE_util=ON \
+  -DBUILD_MODULE_uv=ON \
+  -DBUILD_MODULE_webrtc=ON \
+  -DWITH_FFMPEG=ON \
+  -DWITH_OPENCV=ON \
+  -DWITH_WEBRTC=ON \
+  ..
+make -j4
+make install
+```
