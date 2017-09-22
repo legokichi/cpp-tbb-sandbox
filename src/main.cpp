@@ -1,75 +1,19 @@
-#include <boost/beast/core.hpp>
-#include <boost/beast/websocket.hpp>
-#include <boost/asio/connect.hpp>
-#include <boost/asio/ip/tcp.hpp>
-#include <cstdlib>
+#include <memory>
 #include <iostream>
 #include <string>
-#include <crow/crow.h>
-crow::SimpleApp app;
-#include <json/json.hpp>
-using json = nlohmann::json;
-#include <webrtc/api/peerconnectioninterface.h>
-rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection;
+#include <boost/asio.hpp>
+#include <boost/asio/spawn.hpp>
+#define BOOST_NETWORK_ENABLE_HTTPS 
+#include <boost/network/protocol/http/client.hpp>
+#include <boost/beast/core.hpp>
+#include <boost/beast/websocket.hpp>
+#include <boost/beast/version.hpp>
 
-using tcp = boost::asio::ip::tcp;               // from <boost/asio/ip/tcp.hpp>
-namespace websocket = boost::beast::websocket;  // from <boost/beast/websocket.hpp>
-
-// Sends a WebSocket message and prints the response
-int main(int argc, char** argv)
-{
-    try
-    {
-        // Check command line arguments.
-        if(argc != 4)
-        {
-            std::cerr <<
-                "Usage: websocket-client-sync <host> <port> <text>\n" <<
-                "Example:\n" <<
-                "    websocket-client-sync echo.websocket.org 80 \"Hello, world!\"\n";
-            return EXIT_FAILURE;
-        }
-        auto const host = argv[1];
-        auto const port = argv[2];
-        auto const text = argv[3];
-
-        // The io_service is required for all I/O
-        boost::asio::io_service ios;
-
-        // These objects perform our I/O
-        tcp::resolver resolver{ios};
-        websocket::stream<tcp::socket> ws{ios};
-
-        // Look up the domain name
-        auto const lookup = resolver.resolve({host, port});
-
-        // Make the connection on the IP address we get from a lookup
-        boost::asio::connect(ws.next_layer(), lookup);
-
-        // Perform the websocket handshake
-        ws.handshake(host, "/");
-
-        // Send the message
-        ws.write(boost::asio::buffer(std::string(text)));
-
-        // This buffer will hold the incoming message
-        boost::beast::multi_buffer buffer;
-
-        // Read a message into our buffer
-        ws.read(buffer);
-
-        // Close the WebSocket connection
-        ws.close(websocket::close_code::normal);
-
-        // If we get here then the connection is closed gracefully
-
-        // The buffers() function helps print a ConstBufferSequence
-        std::cout << boost::beast::buffers(buffer.data()) << std::endl;
-    }
-    catch(std::exception const& e)
-    {
-        std::cerr << "Error: " << e.what() << std::endl;
-        return EXIT_FAILURE;
-    }
-    return EXIT_SUCCESS;
+auto main(int argc, char* argv[])-> int {
+  auto request = boost::network::http::client::request{"https://www.google.com/"};
+  request << boost::network::header("Connection", "close");
+  auto client = boost::network::http::client{};
+  auto response = client.get(request);
+  std::cout << boost::network::http::body(response) << std::endl;
+  std::cout << boost::network::http::status(response) << std::endl;
 }
