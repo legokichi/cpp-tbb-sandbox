@@ -10,6 +10,7 @@
                 "/usr/include",
                 "/usr/include/x86_64-linux-gnu",
                 "${workspaceRoot}/third_party/webrtc-checkout/src",
+                "${workspaceRoot}/third_party/boost/boost",
                 "${workspaceRoot}/local/include",
                 "${workspaceRoot}"
             ],
@@ -24,6 +25,7 @@
                     "/usr/include",
                     "/usr/include/x86_64-linux-gnu",
                     "${workspaceRoot}/third_party/webrtc-checkout/src",
+                    "${workspaceRoot}/third_party/boost/boost",
                     "${workspaceRoot}/local/include",
                     "${workspaceRoot}"
                 ],
