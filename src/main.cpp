@@ -10,10 +10,5 @@
 #include <boost/beast/version.hpp>
 
 auto main(int argc, char* argv[])-> int {
-  auto request = boost::network::http::client::request{"https://www.google.com/"};
-  request << boost::network::header("Connection", "close");
-  auto client = boost::network::http::client{};
-  auto response = client.get(request);
-  std::cout << boost::network::http::body(response) << std::endl;
-  std::cout << boost::network::http::status(response) << std::endl;
+  return EXIT_SUCCESS;
 }

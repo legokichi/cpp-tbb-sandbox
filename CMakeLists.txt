@@ -49,8 +49,21 @@ set(CPPNETLIB_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/third_party/cpp-netlib/deps/uri
 #find_package(WebRTC REQUIRED)
 
 
+
+
+
 # build
 file(GLOB_RECURSE SOURCE_FILES "./src/*.cpp")
+add_executable(
+    main
+    ${SOURCE_FILES}
+)
+
+# minitrace
+#include_directories(${PROJECT_SOURCE_DIR}/third_party/minitrace/)
+#target_sources(main PUBLIC ${PROJECT_SOURCE_DIR}/third_party/minitrace/minitrace.c)
+
+
 include_directories(
     ${PROJECT_SOURCE_DIR}/local/include
     #${WEBRTC_INCLUDE_DIR}
@@ -60,10 +73,6 @@ include_directories(
     ${CPPNETLIB_INCLUDE_DIRS}
     ${Boost_INCLUDE_DIRS}
     ${OPENSSL_INCLUDE_DIR}
-)
-add_executable(
-    main
-    ${SOURCE_FILES}
 )
 target_link_libraries(
     main
