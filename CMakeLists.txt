@@ -21,9 +21,12 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/CMakeM
 # OpenSSL
 find_package(OpenSSL REQUIRED)
 
+# OpenSSL
+find_package(OpenSSL REQUIRED)
+
 # boost
-set(Boost_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/local/include)
-set(Boost_LIBRARY_DIR ${PROJECT_SOURCE_DIR}/local/lib)
+#set(Boost_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/local/include)
+#set(Boost_LIBRARY_DIR ${PROJECT_SOURCE_DIR}/local/lib)
 set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME ON)
