@@ -1,6 +1,9 @@
 #include <memory>
 #include <iostream>
 #include <string>
+// http://www.boost.org/doc/libs/develop/doc/html/boost_asio/overview/core/handler_tracking.html
+// need -lpthread
+#define BOOST_ASIO_ENABLE_HANDLER_TRACKING
 #include <boost/asio.hpp>
 #include <boost/asio/spawn.hpp>
 #define BOOST_NETWORK_ENABLE_HTTPS 

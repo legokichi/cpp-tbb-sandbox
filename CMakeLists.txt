@@ -4,16 +4,21 @@ project(cpp-tbb-sandbox)
 # option
 set(CMAKE_C_COMPILER gcc-7)
 set(CMAKE_CXX_COMPILER g++-7)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -v -g")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -v")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 # -fgnu-tm - transactional memory
+
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+
+
 
 # append cmake find modules
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/CMakeModules/")
 
 # pthread
-#set(THREADS_PREFER_PTHREAD_FLAG ON)
-#find_package(Threads REQUIRED)
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
 
 # TBB
 #find_package(TBB COMPONENTS tbb)
@@ -30,6 +35,9 @@ find_package(OpenSSL REQUIRED)
 set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME ON)
+if(CMAKE_BUILD_TYPE MATCHES "(Debug|DEBUG|debug)")
+  set(BOOST_ASIO_ENABLE_HANDLER_TRACKING ON)
+endif()
 find_package(Boost 1.66.0 COMPONENTS system program_options context coroutine regex thread)
 #find_package(Boost REQUIRED COMPONENTS system program_options context coroutine regex thread)
 find_package(cppnetlib 0.11 REQUIRED COMPONENTS client-connections server-parsers)
@@ -61,10 +69,13 @@ add_executable(
     ${SOURCE_FILES}
 )
 
-# minitrace ( need -lpthread -lm )
-#include_directories(${PROJECT_SOURCE_DIR}/third_party/minitrace/)
-#target_sources(main PUBLIC ${PROJECT_SOURCE_DIR}/third_party/minitrace/minitrace.c)
-
+if(CMAKE_BUILD_TYPE MATCHES "(Debug|DEBUG|debug)")
+  # minitrace ( need -lpthread -lm )
+  include_directories(${PROJECT_SOURCE_DIR}/third_party/minitrace)
+  target_sources(main PUBLIC ${PROJECT_SOURCE_DIR}/third_party/minitrace/minitrace.c)
+else()
+  set(MTR_DISABLE ON)
+endif()
 
 include_directories(
     ${PROJECT_SOURCE_DIR}/local/include
@@ -79,7 +90,6 @@ include_directories(
 target_link_libraries(
     main
     boost_coroutine
-    ${PROJECT_SOURCE_DIR}/local/lib
     #${WEBRTC_LIBRARIES}
     #${OpenCV_LIBS}
     #${FFMPEG_LIBRARIES}
@@ -87,5 +97,6 @@ target_link_libraries(
     ${CPPNETLIB_LIBRARIES}
     ${Boost_LIBRARIES}
     ${OPENSSL_LIBRARIES}
-    #${CMAKE_THREAD_LIBS_INIT}
+    ${CMAKE_THREAD_LIBS_INIT}
 )
+
