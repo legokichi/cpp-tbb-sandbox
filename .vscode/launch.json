@@ -2,6 +2,7 @@
     "version": "0.2.0",
     "configurations": [
         {
+            // https://github.com/Microsoft/vscode-cpptools/blob/master/launch.md
             "name": "(gdb) Launch",
             "type": "cppdbg",
             "request": "launch",
@@ -11,15 +12,19 @@
             "cwd": "${workspaceRoot}",
             "environment": [],
             "externalConsole": false,
+            "logging": {
+                "trace": true
+            },
             "MIMode": "gdb",
-            "preLaunchTask": "cmake",
+            "preLaunchTask": "make",
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",
                     "text": "-enable-pretty-printing",
                     "ignoreFailures": true
                 }
-            ]
+            ],
+            "miDebuggerPath": "/usr/bin/gdb"
         }
     ]
 }

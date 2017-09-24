@@ -10,5 +10,9 @@
 #include <boost/beast/version.hpp>
 
 auto main(int argc, char* argv[])-> int {
+  auto a = int{1};
+  auto b = int{2};
+  auto c = a + b;
+  std::cout << "hello" << c << std::endl;
   return EXIT_SUCCESS;
 }

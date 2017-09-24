@@ -1,4 +1,7 @@
 {
+    //https://code.visualstudio.com/docs/languages/cpp#_debugging
+    //"editor.formatOnType": true,
+    //"C_Cpp.clang_format_formatOnSave": true,
     "files.associations": {
         "ostream": "cpp",
         "optional": "cpp",
