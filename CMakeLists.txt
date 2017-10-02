@@ -40,8 +40,8 @@ if(CMAKE_BUILD_TYPE MATCHES "(Debug|DEBUG|debug)")
 endif()
 find_package(Boost 1.66.0 COMPONENTS system program_options context coroutine regex thread)
 #find_package(Boost REQUIRED COMPONENTS system program_options context coroutine regex thread)
-find_package(cppnetlib 0.11 REQUIRED COMPONENTS client-connections server-parsers)
-set(CPPNETLIB_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/third_party/cpp-netlib/deps/uri/include/)
+#find_package(cppnetlib 0.11 REQUIRED COMPONENTS client-connections server-parsers)
+#set(CPPNETLIB_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/third_party/cpp-netlib/deps/uri/include/)
 
 
 # FFMpeg
@@ -83,7 +83,7 @@ include_directories(
     #${OPENCV_INCLUDE_DIRS}
     #${FFMPEG_INCLUDE_DIR}
     #${TBB_INCLUDE_DIR}
-    ${CPPNETLIB_INCLUDE_DIRS}
+    #${CPPNETLIB_INCLUDE_DIRS}
     ${Boost_INCLUDE_DIRS}
     ${OPENSSL_INCLUDE_DIR}
 )
@@ -94,9 +94,8 @@ target_link_libraries(
     #${OpenCV_LIBS}
     #${FFMPEG_LIBRARIES}
     #${TBB_LIBRARIES}
-    ${CPPNETLIB_LIBRARIES}
+    #${CPPNETLIB_LIBRARIES}
     ${Boost_LIBRARIES}
     ${OPENSSL_LIBRARIES}
     ${CMAKE_THREAD_LIBS_INIT}
 )
-

@@ -1,3 +1,8 @@
+```sh
+docker build -t cpp_tbb .
+docker run --rm --net=host -v `pwd`:/opt/cpp_tbb --workdir=/opt/cpp_tbb -ti cpp_tbb /usr/bin/zsh
+```
+
 ## vscode shortcut
 
 * `Ctrl + Shift + P` - command
