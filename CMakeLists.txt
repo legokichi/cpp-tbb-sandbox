@@ -2,7 +2,9 @@ cmake_minimum_required(VERSION 3.5.1)
 project(cpp-tbb-sandbox)
 
 # option
+#set(CMAKE_C_COMPILER clang-5.0)
 set(CMAKE_C_COMPILER gcc-7)
+#set(CMAKE_CXX_COMPILER clang++-5.0)
 set(CMAKE_CXX_COMPILER g++-7)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -v")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
@@ -43,18 +45,18 @@ find_package(Boost 1.66.0 COMPONENTS system program_options context coroutine re
 
 
 # FFMpeg
-find_package(FFmpeg REQUIRED)
+#find_package(FFmpeg REQUIRED)
 
 
 # OpenCV
-find_package(OpenCV REQUIRED)
+#find_package(OpenCV REQUIRED)
 
 # WebRTC
-include(CMakeHelpers REQUIRED)
-include(CMakeFindExtensions REQUIRED)
-set(WEBRTC_ROOT_DIR ${PROJECT_SOURCE_DIR}/third_party/webrtc-checkout/src)
-set(WEBRTC_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/third_party/webrtc-checkout/src)
-find_package(WebRTC REQUIRED)
+#include(CMakeHelpers REQUIRED)
+#include(CMakeFindExtensions REQUIRED)
+#set(WEBRTC_ROOT_DIR ${PROJECT_SOURCE_DIR}/third_party/webrtc-checkout/src)
+#set(WEBRTC_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/third_party/webrtc-checkout/src)
+#find_package(WebRTC REQUIRED)
 
 
 
@@ -77,10 +79,10 @@ endif()
 
 include_directories(
     ${PROJECT_SOURCE_DIR}/local/include
-    ${WEBRTC_INCLUDE_DIR}
-    ${OPENCV_INCLUDE_DIRS}
-    ${FFMPEG_INCLUDE_DIR}
-    ${TBB_INCLUDE_DIR}
+    #${WEBRTC_INCLUDE_DIR}
+    #${OPENCV_INCLUDE_DIRS}
+    #${FFMPEG_INCLUDE_DIR}
+    #${TBB_INCLUDE_DIR}
     #${CPPNETLIB_INCLUDE_DIRS}
     ${Boost_INCLUDE_DIRS}
     ${OPENSSL_INCLUDE_DIR}
@@ -88,9 +90,9 @@ include_directories(
 target_link_libraries(
     main
     ${PROJECT_SOURCE_DIR}/local/lib/libboost_coroutine.a
-    ${WEBRTC_LIBRARIES}
-    ${OpenCV_LIBS}
-    ${FFMPEG_LIBRARIES}
+    #${WEBRTC_LIBRARIES}
+    #${OpenCV_LIBS}
+    #${FFMPEG_LIBRARIES}
     #${TBB_LIBRARIES}
     #${CPPNETLIB_LIBRARIES}
     ${Boost_LIBRARIES}

@@ -5,6 +5,9 @@
 #include <boost/asio/spawn.hpp>
 #include "ricoh.hpp"
 #include <boost/beast/http.hpp>
+
+template<class T>struct TypeDisplayer;
+
 auto main(int argc, char* argv[])-> int {
   if(std::getenv("ACCESS_KEY") == nullptr || std::getenv("SECRET_ACCESS_KEY") == nullptr){
     std::cerr << "need ACCESS_KEY and SECRET_ACCESS_KEY env var" << std::endl;
@@ -13,17 +16,17 @@ auto main(int argc, char* argv[])-> int {
   auto ACCESS_KEY = std::string{std::getenv("ACCESS_KEY")};
   auto SECRET_ACCESS_KEY = std::string{std::getenv("SECRET_ACCESS_KEY")};
   auto ios = std::make_shared<boost::asio::io_service>();
-  boost::asio::spawn(*ios, [&](auto yield) mutable {
+  boost::asio::spawn(*ios, [=](auto yield) mutable {
     auto ec = boost::system::error_code{};
     //auto res = getToken(ios, ACCESS_KEY, SECRET_ACCESS_KEY, yield[ec]);
     auto host = "google.com";
     auto req = http::request<http::string_body>{http::verb::get, "/", 11};
     {auto ret = httpRequest(ios, host, req, yield[ec]);
-      if(auto res_ptr = std::get_if<http::response<http::string_body>>(&ret)){
-        std::cout << *res_ptr << std::endl;
-      }else if(auto err_ptr = std::get_if<std::string>(&ret)){
-        std::cout << *err_ptr << std::endl;
-      }}
+    if(auto res_ptr = std::get_if<http::response<http::string_body>>(&ret)){
+      std::cout << *res_ptr << std::endl;
+    }else if(auto err_ptr = std::get_if<std::string>(&ret)){
+      std::cout << *err_ptr << std::endl;
+    }}
     {auto ret = httpsRequest(ios, host, req, yield[ec]);
     if(auto res_ptr = std::get_if<http::response<http::string_body>>(&ret)){
       std::cout << *res_ptr << std::endl;

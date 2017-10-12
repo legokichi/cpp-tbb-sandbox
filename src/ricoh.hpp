@@ -1,3 +1,6 @@
+template<class T>
+struct TypeDisplayer;
+
 #pragma once
 #include <boost/archive/iterators/binary_from_base64.hpp>
 #include <boost/archive/iterators/base64_from_binary.hpp>
@@ -60,7 +63,7 @@ auto wait(
   using handler_t = HandlerType<CompletionToken, error_code>;
   auto handler = handler_t{std::forward<CompletionToken>(token)};
   auto result = asio::async_result<handler_t>{handler};
-  asio::spawn(*ios, [&, handler](auto yield) mutable {
+  asio::spawn(*ios, [=](auto yield) mutable {
     auto ec = error_code{};
     auto timer = asio::deadline_timer{*ios};
     timer.expires_from_now(time);
@@ -73,15 +76,15 @@ auto wait(
 template<class CompletionToken>
 auto httpRequest(
   const shared_ptr<asio::io_service> ios,
-  const string& host,
-  const http::request<http::string_body>& req,
+  const string host,
+  const http::request<http::string_body> req,
   CompletionToken&& token
 )-> AsyncResult<CompletionToken, variant<string, http::response<http::string_body>>> {
   using ret_t = variant<string, http::response<http::string_body>>;
   using handler_t = HandlerType<CompletionToken, ret_t>;
   auto handler = handler_t{std::forward<CompletionToken>(token)};
   auto result = asio::async_result<handler_t>{handler};
-  asio::spawn(*ios, [&, handler](auto yield) mutable {
+  asio::spawn(*ios, [=](auto yield) mutable {
     auto ec = error_code{};
     auto query  = tcp::resolver::query{host, "http"};
     auto lookup = tcp::resolver{*ios}.async_resolve(query, yield[ec]);
@@ -97,7 +100,7 @@ auto httpRequest(
     if(ec != 0){ return handler(ret_t{"read error"}); }
     socket.shutdown(tcp::socket::shutdown_both, ec);
     if(ec != 0){ return handler(ret_t{"shutdown error"}); }
-    handler(ret_t{std::move(res)});
+    handler(ret_t{res});
   });
   return result.get();
 }
@@ -105,38 +108,53 @@ auto httpRequest(
 template<class CompletionToken>
 auto httpsRequest(
   const shared_ptr<asio::io_service> ios,
-  const string& host,
-  const http::request<http::string_body>& req,
+  const string host,
+  const http::request<http::string_body> req,
   CompletionToken&& token
 )-> AsyncResult<CompletionToken, variant<string, http::response<http::string_body>>> {
   using ret_t = variant<string, http::response<http::string_body>>;
   using handler_t = HandlerType<CompletionToken, ret_t>;
   auto handler = handler_t{std::forward<CompletionToken>(token)};
   auto result = asio::async_result<handler_t>{handler};
-  asio::spawn(*ios, [&, handler](auto yield) mutable {
+  asio::spawn(*ios, [=](auto yield) mutable {
     auto ec = error_code{};
-    auto lookup = tcp::resolver{*ios}.async_resolve(tcp::resolver::query{host, "https"}, yield[ec]);
+
+    auto query = tcp::resolver::query{host, "https"};
+    auto lookup = tcp::resolver{*ios}.async_resolve(query, yield[ec]);
+    std::cout << "dns lookup:" << ec << std::endl;
     if(ec != 0){ return handler(ec, ret_t{"lookup error"}); }
-    auto ctx    = ssl::context{ssl::context::sslv23};
+
+    auto ctx = ssl::context{ssl::context::sslv23};
     auto ssl_socket = ssl::stream<tcp::socket>{*ios, ctx};
     asio::async_connect(ssl_socket.lowest_layer(), lookup, yield[ec]);
-    if(ec != 0){ return handler(ret_t{"connect error"}); }
+    std::cout << "tcp connect:" << ec << std::endl;
+    if(ec != 0){ return handler(ec, ret_t{"connection error"}); }
+
     ssl_socket.async_handshake(ssl::stream_base::client, yield[ec]);
-    if(ec != 0){ return handler(ret_t{"handshake error"}); }
+    std::cout << "ssl handshake:" << ec << std::endl;
+    if(ec != 0){ return handler(ec, ret_t{"handshake error"}); }
+
     http::async_write(ssl_socket, const_cast<http::request<http::string_body>&>(req), yield[ec]);
-    if(ec != 0){ return handler(ret_t{"write error"}); }
-    auto buffer = beast::flat_buffer{};
+    std::cout << "http write:" << ec << std::endl;
+
     auto res = http::response<http::string_body>{};
+    auto buffer = beast::flat_buffer{};
     http::async_read(ssl_socket, buffer, res, yield[ec]);
-    if(ec != 0){ return handler(ret_t{"read error"}); }
-    ssl_socket.lowest_layer().cancel();
+    std::cout << "http read:" << ec << std::endl;
+
+    ssl_socket.lowest_layer().cancel(ec);
+    std::cout << "tcp cancel:" << ec << std::endl;
+
     ssl_socket.async_shutdown(yield[ec]);
-    ssl_socket.lowest_layer().close();
-    std::cout << "ha??" << std::endl;
-    if(ec != 0){ return handler(ret_t{"shutdown error"}); }
-    // https://github.com/boostorg/beast/issues/38
-    // segmentation fault
-    handler(ret_t{std::move(res)});
+    std::cout << "ssl shutdown:" << ec << std::endl;
+
+    ssl_socket.lowest_layer().shutdown(tcp::socket::shutdown_both, ec);
+    std::cout << "tcp shutdown:" << ec << std::endl;
+
+    ssl_socket.lowest_layer().close(ec);
+    std::cout << "tcp close:" << ec << std::endl;
+
+    return handler(ret_t{res});
   });
   return result.get();
 }
@@ -145,15 +163,15 @@ auto httpsRequest(
 template<class CompletionToken>
 auto getToken(
   const shared_ptr<asio::io_service> ios,
-  const string& ACCESS_KEY,
-  const string& SECRET_ACCESS_KEY,
+  const string ACCESS_KEY,
+  const string SECRET_ACCESS_KEY,
   CompletionToken&& token
 )-> AsyncResult<CompletionToken, variant<string, http::response<http::string_body>>> {
   using ret_t = variant<string, http::response<http::string_body>>;
   using handler_type = HandlerType<CompletionToken, ret_t>;
   auto handler = handler_type{std::forward<CompletionToken>(token)};
   auto result = asio::async_result<handler_type>{handler};
-  asio::spawn(*ios, [&, handler](auto yield) mutable {
+  asio::spawn(*ios, [=](auto yield) mutable {
     auto host = "auth.api.ricoh";
     auto path = "/v1/token";
     auto req = http::request<http::string_body>{http::verb::post, path, 11};
@@ -176,16 +194,16 @@ auto getToken(
 template<class CompletionToken>
 auto callAPI(
   const shared_ptr<asio::io_service> ios,
-  const string& accessToken,
-  const string& path,
-  const string& json,
+  const string accessToken,
+  const string path,
+  const string json,
   CompletionToken&& token
 )-> AsyncResult<CompletionToken, variant<string, http::response<http::string_body>>> {
   using ret_t = variant<string, http::response<http::string_body>>;
   using handler_type = HandlerType<CompletionToken, ret_t>;
   auto handler = handler_type{std::forward<CompletionToken>(token)};
   auto result = asio::async_result<handler_type>{handler};
-  asio::spawn(*ios, [&, handler](auto yield) mutable {
+  asio::spawn(*ios, [=](auto yield) mutable {
     auto host = "sfu.api.ricoh";
     auto req = http::request<http::string_body>{http::verb::post, path, 11};
     req.set(http::field::authorization, "Bearer " + accessToken);
@@ -207,19 +225,19 @@ auto callAPI(
 template<class CompletionToken>
 auto callAPI(
   const shared_ptr<asio::io_service> ios,
-  const string& accessToken,
-  const string& path,
+  const string accessToken,
+  const string path,
   CompletionToken&& token
 )-> AsyncResult<CompletionToken, variant<string, http::response<http::string_body>>> {
-  return callAPI(ios, accessToken, path, "{}", std::forward(token));
+  return callAPI(ios, std::move(accessToken), std::move(path), "{}", std::forward(token));
 }
 
 template<class CompletionToken>
 auto getRoomList(
   const shared_ptr<asio::io_service> ios,
-  std::string accessToken,
+  const string accessToken,
   CompletionToken&& token
 )-> AsyncResult<CompletionToken, variant<string, http::response<http::string_body>>> {
-  return callAPI(ios, accessToken, "/v1/rooms", std::forward(token));
+  return callAPI(ios, std::move(accessToken), "/v1/rooms", std::forward(token));
 }
 
