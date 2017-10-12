@@ -30,6 +30,13 @@ cd debug
 apt source libc6
 ```
 
+## core dump
+* http://d.hatena.ne.jp/JiaLu/20120113/1330396897
+
+```sh
+ulimit -c unlimited
+```
+
 ## install build tools
 
 ```sh

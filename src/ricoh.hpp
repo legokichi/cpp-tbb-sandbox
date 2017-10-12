@@ -15,6 +15,10 @@ auto encode64(const std::string &val) -> std::string {
 #include <cstdlib>
 #include <string>
 #include <memory>
+#include <optional>
+#include <variant>
+#include <utility>
+#include <tuple>
 #include <boost/asio.hpp>
 #include <boost/asio/spawn.hpp>
 #include <boost/asio/ssl.hpp>
@@ -26,17 +30,22 @@ auto encode64(const std::string &val) -> std::string {
 #include <boost/beast/http.hpp>
 #include <boost/beast/websocket.hpp>
 
-namespace ricoh{
-namespace sfu{
+using std::string;
+using std::pair;
+using std::tuple;
+using std::variant;
+using std::optional;
+using std::shared_ptr;
 
 namespace asio = boost::asio;
 namespace beast = boost::beast;
-using tcp = boost::asio::ip::tcp;
+using boost::asio::ip::tcp;
 namespace ssl = boost::asio::ssl;
 namespace http = boost::beast::http;
+using boost::system::error_code;
 
 template<class CompletionToken, class ReturnType>
-using HandlerType = typename asio::handler_type<CompletionToken, void(boost::system::error_code, ReturnType)>::type;
+using HandlerType = typename asio::handler_type<CompletionToken, void(ReturnType)>::type;
 
 template<class CompletionToken, class ReturnType>
 using AsyncResult = typename asio::async_result<HandlerType<CompletionToken, ReturnType>>::type;
@@ -44,49 +53,90 @@ using AsyncResult = typename asio::async_result<HandlerType<CompletionToken, Ret
 
 template<class CompletionToken>
 auto wait(
-  asio::io_service& ios,
-  boost::posix_time::time_duration time,
+  const shared_ptr<asio::io_service> ios,
+  const boost::posix_time::time_duration time,
   CompletionToken&& token
-)-> AsyncResult<CompletionToken, int> {
-  using handler_type = HandlerType<CompletionToken, int>;
-  auto handler = handler_type{std::forward<decltype(token)>(token)};
-  auto result = asio::async_result<handler_type>{handler};
-  boost::asio::spawn(ios, [&ios, time, handler](auto const yield) mutable {
-    auto timer1 = boost::asio::deadline_timer{ios};
-    timer1.expires_from_now(time);
-    timer1.async_wait(yield);
-    handler(boost::system::error_code{}, 0);
+)-> AsyncResult<CompletionToken, error_code> {
+  using handler_t = HandlerType<CompletionToken, error_code>;
+  auto handler = handler_t{std::forward<CompletionToken>(token)};
+  auto result = asio::async_result<handler_t>{handler};
+  asio::spawn(*ios, [&, handler](auto yield) mutable {
+    auto ec = error_code{};
+    auto timer = asio::deadline_timer{*ios};
+    timer.expires_from_now(time);
+    timer.async_wait(yield[ec]);
+    handler(std::move(ec));
   });
   return result.get();
 }
 
-
 template<class CompletionToken>
 auto httpRequest(
-  std::shared_ptr<asio::io_service> ios,
-  std::string host,
-  http::request<http::string_body>&& req,
+  const shared_ptr<asio::io_service> ios,
+  const string& host,
+  const http::request<http::string_body>& req,
   CompletionToken&& token
-)-> AsyncResult<CompletionToken, http::response<http::dynamic_body>> {
-  using handler_type = HandlerType<CompletionToken, http::response<http::dynamic_body>>;
-  auto handler = handler_type{std::forward<decltype(token)>(token)};
-  auto result = asio::async_result<handler_type>{handler};
-  asio::spawn(*ios, [ios, host, req=std::move(req), handler=std::move(handler)](auto const yield) mutable {
-    auto const query  = tcp::resolver::query{host, "https"};
-    auto const lookup = tcp::resolver{*ios}.async_resolve(query, yield);
-    auto ctx    = ssl::context{ssl::context::sslv23};
-    auto socket = ssl::stream<tcp::socket>{*ios, ctx};
-    asio::async_connect(socket.lowest_layer(), lookup, yield);
-    socket.async_handshake(ssl::stream_base::client, yield);
-    http::async_write(socket, req, yield);
+)-> AsyncResult<CompletionToken, variant<string, http::response<http::string_body>>> {
+  using ret_t = variant<string, http::response<http::string_body>>;
+  using handler_t = HandlerType<CompletionToken, ret_t>;
+  auto handler = handler_t{std::forward<CompletionToken>(token)};
+  auto result = asio::async_result<handler_t>{handler};
+  asio::spawn(*ios, [&, handler](auto yield) mutable {
+    auto ec = error_code{};
+    auto query  = tcp::resolver::query{host, "http"};
+    auto lookup = tcp::resolver{*ios}.async_resolve(query, yield[ec]);
+    if(ec != 0){ return handler(ec, ret_t{"lookup error"}); }
+    auto socket = tcp::socket{*ios};
+    asio::async_connect(socket, lookup, yield[ec]);
+    if(ec != 0){ return handler(ret_t{"connect error"}); }
+    http::async_write(socket, const_cast<http::request<http::string_body>&>(req), yield[ec]);
+    if(ec != 0){ return handler(ret_t{"write error"}); }
     auto buffer = beast::flat_buffer{};
-    auto res = http::response<http::dynamic_body>{};
-    http::async_read(socket, buffer, res, yield);
-    try{
-      socket.async_shutdown(yield);
-    }catch (std::exception& err){
-    }
-    handler(boost::system::error_code{}, std::move(res));
+    auto res = http::response<http::string_body>{};
+    http::async_read(socket, buffer, res, yield[ec]);
+    if(ec != 0){ return handler(ret_t{"read error"}); }
+    socket.shutdown(tcp::socket::shutdown_both, ec);
+    if(ec != 0){ return handler(ret_t{"shutdown error"}); }
+    handler(ret_t{std::move(res)});
+  });
+  return result.get();
+}
+
+template<class CompletionToken>
+auto httpsRequest(
+  const shared_ptr<asio::io_service> ios,
+  const string& host,
+  const http::request<http::string_body>& req,
+  CompletionToken&& token
+)-> AsyncResult<CompletionToken, variant<string, http::response<http::string_body>>> {
+  using ret_t = variant<string, http::response<http::string_body>>;
+  using handler_t = HandlerType<CompletionToken, ret_t>;
+  auto handler = handler_t{std::forward<CompletionToken>(token)};
+  auto result = asio::async_result<handler_t>{handler};
+  asio::spawn(*ios, [&, handler](auto yield) mutable {
+    auto ec = error_code{};
+    auto lookup = tcp::resolver{*ios}.async_resolve(tcp::resolver::query{host, "https"}, yield[ec]);
+    if(ec != 0){ return handler(ec, ret_t{"lookup error"}); }
+    auto ctx    = ssl::context{ssl::context::sslv23};
+    auto ssl_socket = ssl::stream<tcp::socket>{*ios, ctx};
+    asio::async_connect(ssl_socket.lowest_layer(), lookup, yield[ec]);
+    if(ec != 0){ return handler(ret_t{"connect error"}); }
+    ssl_socket.async_handshake(ssl::stream_base::client, yield[ec]);
+    if(ec != 0){ return handler(ret_t{"handshake error"}); }
+    http::async_write(ssl_socket, const_cast<http::request<http::string_body>&>(req), yield[ec]);
+    if(ec != 0){ return handler(ret_t{"write error"}); }
+    auto buffer = beast::flat_buffer{};
+    auto res = http::response<http::string_body>{};
+    http::async_read(ssl_socket, buffer, res, yield[ec]);
+    if(ec != 0){ return handler(ret_t{"read error"}); }
+    ssl_socket.lowest_layer().cancel();
+    ssl_socket.async_shutdown(yield[ec]);
+    ssl_socket.lowest_layer().close();
+    std::cout << "ha??" << std::endl;
+    if(ec != 0){ return handler(ret_t{"shutdown error"}); }
+    // https://github.com/boostorg/beast/issues/38
+    // segmentation fault
+    handler(ret_t{std::move(res)});
   });
   return result.get();
 }
@@ -94,81 +144,82 @@ auto httpRequest(
 
 template<class CompletionToken>
 auto getToken(
-  std::shared_ptr<asio::io_service> ios,
+  const shared_ptr<asio::io_service> ios,
+  const string& ACCESS_KEY,
+  const string& SECRET_ACCESS_KEY,
   CompletionToken&& token
-)-> AsyncResult<CompletionToken, http::response<http::dynamic_body>> {
-  using handler_type = HandlerType<CompletionToken, http::response<http::dynamic_body>>;
-  auto handler = handler_type{std::forward<decltype(token)>(token)};
+)-> AsyncResult<CompletionToken, variant<string, http::response<http::string_body>>> {
+  using ret_t = variant<string, http::response<http::string_body>>;
+  using handler_type = HandlerType<CompletionToken, ret_t>;
+  auto handler = handler_type{std::forward<CompletionToken>(token)};
   auto result = asio::async_result<handler_type>{handler};
-  namespace http = boost::beast::http;
-  boost::asio::spawn(*ios, [ios, handler=std::move(handler)](auto const yield) mutable {
+  asio::spawn(*ios, [&, handler](auto yield) mutable {
     auto host = "auth.api.ricoh";
     auto path = "/v1/token";
     auto req = http::request<http::string_body>{http::verb::post, path, 11};
-    req.set(http::field::host, host);
-    req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
-    req.set(http::field::content_type, "application/x-www-form-urlencoded; charset=utf-8");
     req.set(http::field::accept, "application/json");
-    auto ACCESS_KEY = std::string{std::getenv("ACCESS_KEY")};
-    auto SECRET_ACCESS_KEY = std::string{std::getenv("SECRET_ACCESS_KEY")};
-    auto base64 = encode64(ACCESS_KEY + ":" + SECRET_ACCESS_KEY);
-    req.set(http::field::authorization, "Basic " + base64);
+    req.set(http::field::authorization, "Basic " + encode64(ACCESS_KEY + ":" + SECRET_ACCESS_KEY));
+    req.set(http::field::content_type, "application/x-www-form-urlencoded; charset=utf-8");
     req.body() = "grant_type=client_credentials&scope=sfu.api.ricoh/v1/sfu";
     req.prepare_payload();
-    auto res = httpRequest(ios, host, std::move(req), yield);
-    handler(boost::system::error_code{}, std::move(res));
+    auto ret = httpRequest(ios, host, req, yield);
+    if(auto err_ptr = std::get_if<string>(&ret)){
+      return handler(ret_t{*err_ptr});
+    }else if(auto res_ptr = std::get_if<http::response<http::string_body>>(&ret)){
+      return handler(ret_t{*res_ptr});
+    }
+    return handler(ret_t{"unknown type error"});
   });
   return result.get();
 }
 
 template<class CompletionToken>
 auto callAPI(
-  std::shared_ptr<boost::asio::io_service> ios,
-  std::string accessToken,
-  std::string path,
-  std::string json,
+  const shared_ptr<asio::io_service> ios,
+  const string& accessToken,
+  const string& path,
+  const string& json,
   CompletionToken&& token
-)-> typename boost::asio::async_result<typename boost::asio::handler_type<CompletionToken, void(boost::system::error_code, boost::beast::http::response<boost::beast::http::dynamic_body>)>::type>::type {
-  using handler_type = typename boost::asio::handler_type<CompletionToken, void(boost::system::error_code, boost::beast::http::response<boost::beast::http::dynamic_body>)>::type;
-  auto handler = handler_type{std::forward<decltype(token)>(token)};
-  auto result = boost::asio::async_result<handler_type>{handler};
-  namespace http = boost::beast::http;
-  boost::asio::spawn(*ios, [ios, accessToken, path, json, handler=std::move(handler)](auto const yield) mutable {
+)-> AsyncResult<CompletionToken, variant<string, http::response<http::string_body>>> {
+  using ret_t = variant<string, http::response<http::string_body>>;
+  using handler_type = HandlerType<CompletionToken, ret_t>;
+  auto handler = handler_type{std::forward<CompletionToken>(token)};
+  auto result = asio::async_result<handler_type>{handler};
+  asio::spawn(*ios, [&, handler](auto yield) mutable {
     auto host = "sfu.api.ricoh";
     auto req = http::request<http::string_body>{http::verb::post, path, 11};
-    req.set(http::field::host, host);
-    req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
     req.set(http::field::authorization, "Bearer " + accessToken);
     req.set(http::field::accept, "application/json");
     req.set(http::field::content_type, "application/json");
     req.body() = json;
     req.prepare_payload();
-    auto res = httpRequest(ios, host, std::move(req), yield);
-    handler(boost::system::error_code{}, std::move(res));
+    auto ret = httpRequest(ios, host, req, yield);
+    if(auto err_ptr = std::get_if<string>(&ret)){
+      return handler(ret_t{*err_ptr});
+    }else if(auto res_ptr = std::get_if<http::response<http::string_body>>(&ret)){
+      return handler(ret_t{*res_ptr});
+    }
+    return handler(ret_t{"unknown type error"});
   });
   return result.get();
 }
 
 template<class CompletionToken>
 auto callAPI(
-  std::shared_ptr<boost::asio::io_service> ios,
-  std::string accessToken,
-  std::string path,
+  const shared_ptr<asio::io_service> ios,
+  const string& accessToken,
+  const string& path,
   CompletionToken&& token
-)-> typename boost::asio::async_result<typename boost::asio::handler_type<CompletionToken, void(boost::system::error_code, boost::beast::http::response<boost::beast::http::dynamic_body>)>::type>::type {
+)-> AsyncResult<CompletionToken, variant<string, http::response<http::string_body>>> {
   return callAPI(ios, accessToken, path, "{}", std::forward(token));
 }
 
 template<class CompletionToken>
 auto getRoomList(
-  std::shared_ptr<boost::asio::io_service> ios,
+  const shared_ptr<asio::io_service> ios,
   std::string accessToken,
   CompletionToken&& token
-)-> typename boost::asio::async_result<typename boost::asio::handler_type<CompletionToken, void(boost::system::error_code, boost::beast::http::response<boost::beast::http::dynamic_body>)>::type>::type {
+)-> AsyncResult<CompletionToken, variant<string, http::response<http::string_body>>> {
   return callAPI(ios, accessToken, "/v1/rooms", std::forward(token));
 }
 
-
-
-}
-}

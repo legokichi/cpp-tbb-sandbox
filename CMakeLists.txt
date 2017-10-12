@@ -26,12 +26,9 @@ find_package(Threads REQUIRED)
 # OpenSSL
 find_package(OpenSSL REQUIRED)
 
-# OpenSSL
-find_package(OpenSSL REQUIRED)
-
 # boost
-#set(Boost_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/local/include)
-#set(Boost_LIBRARY_DIR ${PROJECT_SOURCE_DIR}/local/lib)
+set(Boost_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/local/include)
+set(Boost_LIBRARY_DIR ${PROJECT_SOURCE_DIR}/local/lib)
 set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME ON)
@@ -40,23 +37,24 @@ if(CMAKE_BUILD_TYPE MATCHES "(Debug|DEBUG|debug)")
 endif()
 find_package(Boost 1.66.0 COMPONENTS system program_options context coroutine regex thread)
 #find_package(Boost REQUIRED COMPONENTS system program_options context coroutine regex thread)
+
 #find_package(cppnetlib 0.11 REQUIRED COMPONENTS client-connections server-parsers)
 #set(CPPNETLIB_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/third_party/cpp-netlib/deps/uri/include/)
 
 
 # FFMpeg
-#find_package(FFmpeg REQUIRED)
+find_package(FFmpeg REQUIRED)
 
 
 # OpenCV
-#find_package(OpenCV REQUIRED)
+find_package(OpenCV REQUIRED)
 
 # WebRTC
-#include(CMakeHelpers REQUIRED)
-#include(CMakeFindExtensions REQUIRED)
-#set(WEBRTC_ROOT_DIR ${PROJECT_SOURCE_DIR}/third_party/webrtc-checkout/src)
-#set(WEBRTC_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/third_party/webrtc-checkout/src)
-#find_package(WebRTC REQUIRED)
+include(CMakeHelpers REQUIRED)
+include(CMakeFindExtensions REQUIRED)
+set(WEBRTC_ROOT_DIR ${PROJECT_SOURCE_DIR}/third_party/webrtc-checkout/src)
+set(WEBRTC_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/third_party/webrtc-checkout/src)
+find_package(WebRTC REQUIRED)
 
 
 
@@ -79,20 +77,20 @@ endif()
 
 include_directories(
     ${PROJECT_SOURCE_DIR}/local/include
-    #${WEBRTC_INCLUDE_DIR}
-    #${OPENCV_INCLUDE_DIRS}
-    #${FFMPEG_INCLUDE_DIR}
-    #${TBB_INCLUDE_DIR}
+    ${WEBRTC_INCLUDE_DIR}
+    ${OPENCV_INCLUDE_DIRS}
+    ${FFMPEG_INCLUDE_DIR}
+    ${TBB_INCLUDE_DIR}
     #${CPPNETLIB_INCLUDE_DIRS}
     ${Boost_INCLUDE_DIRS}
     ${OPENSSL_INCLUDE_DIR}
 )
 target_link_libraries(
     main
-    boost_coroutine
-    #${WEBRTC_LIBRARIES}
-    #${OpenCV_LIBS}
-    #${FFMPEG_LIBRARIES}
+    ${PROJECT_SOURCE_DIR}/local/lib/libboost_coroutine.a
+    ${WEBRTC_LIBRARIES}
+    ${OpenCV_LIBS}
+    ${FFMPEG_LIBRARIES}
     #${TBB_LIBRARIES}
     #${CPPNETLIB_LIBRARIES}
     ${Boost_LIBRARIES}
