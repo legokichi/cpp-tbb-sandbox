@@ -57,6 +57,40 @@ RUN gclient sync --with_branch_heads
 RUN gn gen out/Release --args='rtc_use_h264=true rtc_use_lto=true'
 RUN ninja -C out/Release
 
+### ffmpeg
+
+WORKDIR /opt
+RUN git clone --recursive --depth 1 https://github.com/FFmpeg/FFmpeg.git
+WORKDIR /opt/FFmpeg
+RUN apt-get install -y --no-install-recommends \
+  autoconf automake build-essential libass-dev libfreetype6-dev \
+  libsdl2-dev libtheora-dev libtool libva-dev libvdpau-dev libvorbis-dev libxcb1-dev libxcb-shm0-dev \
+  libxcb-xfixes0-dev pkg-config texinfo wget zlib1g-dev \
+  yasm nasm \
+  libx264-dev libmp3lame-dev libfdk-aac-dev \
+  libvpx-dev libopus-dev
+RUN env PKG_CONFIG_PATH=../../local/lib/pkgconfig ./configure \
+  --enable-gpl \
+  --enable-version3 \
+  --enable-nonfree \
+  \
+  --enable-static \
+  --disable-shared \
+  --disable-doc \
+  \
+  --disable-ffplay \
+  --disable-ffprobe \
+  --disable-ffserver \
+  \
+  --enable-libass \
+  --enable-libfdk-aac \
+  --enable-libfreetype \
+  --enable-libmp3lame \
+  --enable-libopus \
+  --enable-libvpx \
+  --enable-libx264
+RUN make -j4 && make install && hash -r
+
 
 ### libsourcey
 
@@ -68,7 +102,10 @@ WORKDIR /opt/libsourcey
 RUN mkdir build
 WORKDIR /opt/libsourcey/build
 RUN cmake \
-  -DWEBRTC_ROOT_DIR=/opt/webrtc-checkout/src/ \
+  -DCMAKE_INSTALL_PREFIX="/home/legokichi/Github/cpp_tbb/local/" \
+  -DWEBRTC_ROOT_DIR="/home/legokichi/Github/cpp_tbb/third_party/webrtc-checkout/src/" \
+  -DWEBRTC_INCLUDE_DIR="/home/legokichi/Github/cpp_tbb/third_party/webrtc-checkout/src/" \
+  -DWEBRTC_ROOT_DIR="/opt/webrtc-checkout/src/" \
   -DCMAKE_BUILD_TYPE=RELEASE \
   -DBUILD_SHARED_LIBS=OFF \
   -DBUILD_MODULES=OFF \

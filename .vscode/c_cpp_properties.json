@@ -9,10 +9,7 @@
                 "/usr/local/include",
                 "/usr/include",
                 "/usr/include/x86_64-linux-gnu",
-                "${workspaceRoot}/third_party/webrtc-checkout/src",
-                "${workspaceRoot}/third_party/boost/boost",
-                "${workspaceRoot}/local/include",
-                "${workspaceRoot}"
+                "${workspaceRoot}/local/include"
             ],
             "defines": [],
             "intelliSenseMode": "clang-x64",
@@ -24,10 +21,7 @@
                     "/usr/local/include",
                     "/usr/include",
                     "/usr/include/x86_64-linux-gnu",
-                    "${workspaceRoot}/third_party/webrtc-checkout/src",
-                    "${workspaceRoot}/third_party/boost/boost",
-                    "${workspaceRoot}/local/include",
-                    "${workspaceRoot}"
+                    "${workspaceRoot}/local/include"
                 ],
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": ""
