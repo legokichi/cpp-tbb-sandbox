@@ -1,3 +1,26 @@
+saninini  ninininiinninini
+
+```sh
+sudo docker build \
+  --build-arg user_id=$UID \
+  --build-arg group_id=$GID \
+  -t vscode \
+  ./
+xhost +local:
+docker run \
+  --rm \
+  --env="DISPLAY=$DISPLAY" \
+  --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" \
+  --volume="$(pwd):/opt/workdir" \
+  --workdir="/opt/workdir" \
+  -ti \
+  vscode \
+    /usr/bin/code --verbose ./
+ibus-setup
+```
+
+
+
 ```sh
 docker build -t cpp_tbb .
 docker run --rm --net=host -v `pwd`:/opt/cpp_tbb --workdir=/opt/cpp_tbb -ti cpp_tbb /usr/bin/zsh

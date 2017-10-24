@@ -1,35 +1,3 @@
-FROM ubuntu:16.04
-ENV DEBIAN_FRONTEND "noninteractive"
-RUN apt-get update
-RUN apt-get -y \
-  -o Dpkg::Options::="--force-confdef" \
-  -o Dpkg::Options::="--force-confold" dist-upgrade
-
-RUN apt-get install -y --no-install-recommends \
-  software-properties-common \
-  ppa-purge \
-  build-essential \
-  zip unzip zlib1g-dev \
-  openssl libssl-dev \
-  bzip2 libbz2-dev  \
-  binutils \
-  zsh vim git \
-  cmake autoconf automake pkg-config \
-  wget curl \
-  screen tree htop \
-  sudo
-
-RUN add-apt-repository ppa:ubuntu-toolchain-r/test
-
-RUN echo "# http://apt.llvm.org" >> /etc/apt/sources.list
-RUN echo "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-5.0 main" >> /etc/apt/sources.list
-RUN wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add -
-
-RUN apt-get update
-RUN apt-get install -y --no-install-recommends \
-  clang-5.0 lldb-5.0 lld-5.0 \
-  gcc-7 g++-7
-
 
 ## install deps
 
