@@ -6,15 +6,16 @@ RUN apt-get -y \
   -o Dpkg::Options::="--force-confdef" \
   -o Dpkg::Options::="--force-confold" dist-upgrade
 
-# Install the required packages for desktop
-RUN apt-get install -y \
-  supervisor xvfb xfce4 x11vnc xfce4-terminal
-
 ENV HOME /root
 ENV LANG ja_JP.UTF-8
 ENV LC_ALL ${LANG}
 ENV LANGUAGE ${LANG}
 ENV TZ Asia/Tokyo
+
+# Install the required packages for desktop
+RUN apt-get install -y \
+  xvfb xfce4 x11vnc xfce4-terminal \
+  supervisor
 
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime
 RUN echo $TZ > /etc/timezone
@@ -24,19 +25,11 @@ RUN apt-get install -y \
   language-pack-ja-base \
   language-pack-ja \
   ibus-mozc \
-  dbus-x11 \
   fonts-takao
-
-# https://wiki.manjaro.org/index.php?title=日本語の設定
-ENV DefaultIMModule ibus
-ENV XMODIFIERS "@im=ibus"
-ENV XMODIFIER "@im=ibus"
-ENV GTK_IM_MODULE ibus
-ENV QT_IM_MODULE ibus
-ENV IBUS_ENABLE_SYNC_MODE 1
 
 # Install utilities(optional).
 RUN apt-get install -y --no-install-recommends \
+  dconf-tools \
   apt-transport-https software-properties-common ppa-purge apt-utils \
   ca-certificates git curl wget \
   tar zip unzip zlib1g-dev bzip2 libbz2-dev \
@@ -66,7 +59,6 @@ RUN apt-get install -y --no-install-recommends \
 RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 20
 RUN update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-6 20
 
-
 # Install vscode - https://code.visualstudio.com/docs/setup/linux
 RUN curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > microsoft.gpg
 RUN mv microsoft.gpg /etc/apt/trusted.gpg.d/microsoft.gpg
@@ -86,7 +78,6 @@ RUN rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
 EXPOSE 8080
 COPY supervisord/* /etc/supervisor/conf.d/
-#CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
 
 ARG user_name=ubuntu
 ARG user_id=1942
@@ -122,9 +113,19 @@ RUN git clone https://gist.github.com/legokichi/fbf096e826d07e7724f6c3d09eefb216
   chmod +x install.sh && \
   /bin/bash install.sh
 RUN echo 'shell "/usr/bin/zsh"' >>  /home/ubuntu/.screenrc
-RUN echo "ibus-daemon -d -x" >> $HOME/.zshrc
+RUN echo "ibus-daemon -d -x && sleep 3 && ibus engine mozc-jp" >> $HOME/.zshrc
 
 RUN git config --global user.email "legokichi@gmail.com"
 RUN git config --global user.name "legokichi"
 
+# https://wiki.manjaro.org/index.php?title=日本語の設定
+ENV DefaultIMModule ibus
+ENV XMODIFIERS "@im=ibus"
+ENV XMODIFIER "@im=ibus"
+ENV GTK_IM_MODULE ibus
+ENV QT_IM_MODULE ibus
+ENV IBUS_ENABLE_SYNC_MODE 1
+RUN sudo dconf-editor set org.freedesktop.ibus.general.hotkey triggers ['<Control><Alt>space']
+
+#CMD ["sudo", "/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
 CMD ["/usr/bin/zsh"]

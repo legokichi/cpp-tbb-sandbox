@@ -22,7 +22,7 @@ xhost +local: && sudo docker run \
   --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" \
   --volume="$(pwd):/opt/workdir" \
   --workdir="/opt/workdir" \
-  ubuntu-vscode
+  vscode
 ```
 
 ### vscode
