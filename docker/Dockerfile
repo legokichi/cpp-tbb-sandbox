@@ -101,6 +101,7 @@ RUN /usr/bin/code --install-extension DevonDCarew.bazel-code
 RUN /usr/bin/code --install-extension naereen.makefiles-support-for-vscode
 RUN /usr/bin/code --install-extension maelvalais.autoconf
 RUN /usr/bin/code --install-extension PeterJausovec.vscode-docker
+RUN /usr/bin/code --install-extension twxs.cmake
 
 # https://github.com/pyenv/pyenv#basic-github-checkout
 RUN git clone https://github.com/yyuu/pyenv.git $HOME/.pyenv

@@ -39,3 +39,39 @@ make -j4
 make install
 hash -r
 
+
+
+#RUN apt-get install -y yasm
+
+#WORKDIR /tmp
+#RUN wget -O - http://download.videolan.org/pub/x264/snapshots/x264-snapshot-20171025-2245-stable.tar.bz2 | tar -xjf -
+#WORKDIR /tmp/x264-snapshot-20171025-2245-stable
+#RUN ./configure \
+#  --enable-static \
+#  --enable-shared \
+#  --enable-pic
+#RUN make -j
+#RUN make install
+
+#RUN apt-get install -y libmp3lame-dev libfdk-aac-dev
+
+#WORKDIR /tmp 
+##RUN git clone --depth 1 http://source.ffmpeg.org/git/ffmpeg.git
+#RUN wget -O - https://github.com/FFmpeg/FFmpeg/archive/n2.8.12.tar.gz | tar -xzf -
+#WORKDIR /tmp/FFmpeg-n2.8.12
+#RUN ./configure \
+#  --enable-nonfree \
+#  --enable-gpl \
+#  --enable-version3 \
+#  --cpu=native \
+#  --enable-libx264 \
+#  --enable-libmp3lame \
+#  --enable-libfdk-aac \
+#  --disable-programs \
+#  --disable-ffplay \
+#  --disable-ffprobe \
+#  --disable-ffserver \
+#  --disable-doc
+#RUN make -j
+#RUN make install
+#RUN ldconfig
