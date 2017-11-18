@@ -12,9 +12,10 @@ sudo docker build \
 ```
 
 ## run
-
+### local docker container
 ```sh
-xhost +local: && sudo docker run \
+xhost +local:
+sudo docker run \
   --rm \
   -p 8080:8080 \
   -ti \
@@ -22,14 +23,34 @@ xhost +local: && sudo docker run \
   --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" \
   --volume="$(pwd):/opt/workdir" \
   --workdir="/opt/workdir" \
-  vscode
+  vscode \
+    /usr/bin/code --verbose ./
 ```
 
-### vscode
+### over ssh x11 forwarding
 
-```sh
-/usr/bin/code --verbose ./
+* https://stackoverflow.com/questions/38249629/inside-a-docker-container-error-cannot-open-display-localhost11-0
+* https://unix.stackexchange.com/questions/110558/su-with-error-x11-connection-rejected-because-of-wrong-authentication
+* `--volume /home/` __ubuntu__ `/.Xauthority:/home/` __vscode__ `/.Xauthority:rw \` <- check it
 ```
+ssh -XC foo@bar
+```
+
+```
+sudo docker run \
+  --privileged \
+  --rm \
+  -ti \
+  --env DISPLAY=$DISPLAY \
+  --net host \
+  --volume /tmp/.X11-unix:/tmp/.X11-unix:rw \
+  --volume /home/ubuntu/.Xauthority:/home/vscode/.Xauthority:rw \
+  --volume $(pwd):/opt/workdir \
+  --workdir /opt/workdir \
+  vscode \
+    /usr/bin/code --verbose ./
+```
+
 
 ### novnc
 
