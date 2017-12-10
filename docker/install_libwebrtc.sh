@@ -6,6 +6,7 @@ set -eu
 cd /opt
 git clone --recursive --depth 1 https://chromium.googlesource.com/chromium/tools/depot_tools.git
 export PATH=$PATH:/opt/depot_tools
+mkdir -p /opt/webrtc-checkout
 cd /opt/webrtc-checkout
 fetch --nohooks webrtc
 cd /opt/webrtc-checkout/src

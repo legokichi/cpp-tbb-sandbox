@@ -113,7 +113,7 @@ RUN git clone https://gist.github.com/legokichi/fbf096e826d07e7724f6c3d09eefb216
   cd dotfiles && \
   chmod +x install.sh && \
   /bin/bash install.sh
-RUN echo 'shell "/usr/bin/zsh"' >>  /home/ubuntu/.screenrc
+RUN echo 'shell "/usr/bin/zsh"' >> $HOME/.screenrc
 RUN echo "ibus-daemon -d -x && sleep 3 && ibus engine mozc-jp" >> $HOME/.zshrc
 
 RUN git config --global user.email "legokichi@gmail.com"
@@ -126,7 +126,7 @@ ENV XMODIFIER "@im=ibus"
 ENV GTK_IM_MODULE ibus
 ENV QT_IM_MODULE ibus
 ENV IBUS_ENABLE_SYNC_MODE 1
-RUN sudo dconf-editor set org.freedesktop.ibus.general.hotkey triggers ['<Control><Alt>space']
+#RUN sudo dconf-editor set org.freedesktop.ibus.general.hotkey triggers ['<Control><Alt>space']
 
 #CMD ["sudo", "/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
 CMD ["/usr/bin/zsh"]
